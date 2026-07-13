@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/game-data-analyzer/static/js/main.ab18308f.js",
+    "main.js": "/game-data-analyzer/static/js/main.cef776b8.js",
     "index.html": "/game-data-analyzer/index.html",
-    "main.ab18308f.js.map": "/game-data-analyzer/static/js/main.ab18308f.js.map"
+    "main.cef776b8.js.map": "/game-data-analyzer/static/js/main.cef776b8.js.map"
   },
   "entrypoints": [
-    "static/js/main.ab18308f.js"
+    "static/js/main.cef776b8.js"
   ]
 }
