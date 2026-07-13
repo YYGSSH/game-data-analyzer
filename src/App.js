@@ -130,7 +130,7 @@ function App() {
         </div>
 
         {/* ===== ROW 1: Player + Overview (2 columns) ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           {/* Player Status */}
           <Section title="🎯 玩家状态">
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -189,7 +189,7 @@ function App() {
         </div>
 
         {/* ===== ROW 2: Charts (2 columns) ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <Section title="📍 区域分布">
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={zoneEntries} layout="vertical" margin={{ left: 10, right: 20 }}>
@@ -220,7 +220,7 @@ function App() {
 
         {/* ===== ROW 3: NPC (full width grid) ===== */}
         <Section title="👥 NPC 实时状态">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             {npcs.map((n, i) => {
               const stateIcons = { walking: '🚶', talking: '💬', casting: '✨', idle: '💤' };
               const stateLabels = { walking: '移动中', talking: '对话中', casting: '施法中', idle: '待机' };
@@ -254,7 +254,7 @@ function App() {
           {monsters.length === 0 ? (
             <p className="text-gray-400 text-center py-4">暂无怪物</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               {monsters.map((m, i) => (
                 <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-3">
