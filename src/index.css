@@ -2,15 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional: global scrollbar styling */
-::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
 }
-::-webkit-scrollbar-thumb {
-    background: #cbd5e1; /* Tailwind gray-300 */
-    border-radius: 9999px;
-}
-::-webkit-scrollbar-track {
-    background: #f1f5f9; /* Tailwind gray-100 */
-}
+
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
+::-webkit-scrollbar-track { background: #1e293b; }
