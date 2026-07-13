@@ -5,41 +5,90 @@ import { motion } from "framer-motion";
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#ef4444'];
 
 const ZONE_MAP = {
-  dark_forest: '黑暗森林', elf_woods: '精灵林地', mine: '矿山深处',
-  tavern: '酒馆', tower: '高塔', shop: '商铺', ruins: '古城遗迹', village: '村庄',
+  dark_forest: 'dark forest', elf_woods: 'elf woods', mine: 'mine',
+  tavern: 'tavern', tower: 'tower', shop: 'shop', ruins: 'ruins', village: 'village',
 };
 
-function HPBar({ hp, maxHp }) {
+const ZONE_CN = {
+  dark_forest: 'Dark Forest', elf_woods: 'Elf Woods', mine: 'Mine',
+  tavern: 'Tavern', tower: 'Tower', shop: 'Shop', ruins: 'Ruins', village: 'Village',
+};
+
+const NPC_COLORS = {
+  '\u827e\u5fb7\u91cc\u514b': '#7c3aed', '\u83b1\u62c9': '#22c55e', '\u5e03\u7f57\u52a0': '#f97316',
+  '\u7c73\u62c9': '#ef4444', '\u51ef\u5c14': '#eab308',
+};
+
+// Common styles
+const S = {
+  page: { background: '#f1f5f9', minHeight: '100vh', padding: '24px' },
+  container: { maxWidth: 1200, margin: '0 auto' },
+  row: { display: 'flex', gap: 24, marginBottom: 24 },
+  col2: { flex: 1, minWidth: 0 },
+  full: { marginBottom: 24 },
+  card: { background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
+  cardHead: { padding: '12px 20px', borderBottom: '1px solid #f3f4f6', background: '#f9fafb' },
+  cardHeadTitle: { fontSize: 13, fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  cardBody: { padding: 20 },
+  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 },
+  statCard: { background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
+  statIcon: { fontSize: 20 },
+  statLabel: { fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  statVal: { fontSize: 22, fontWeight: 700, marginTop: 2 },
+  statSub: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  hpBar: { background: '#f3f4f6', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', marginBottom: 12 },
+  hpLabel: { display: 'flex', justifyContent: 'space-between', marginBottom: 8 },
+  hpLabelText: { fontSize: 13, fontWeight: 600, color: '#374151' },
+  hpVal: { fontSize: 13, fontWeight: 700 },
+  barBg: { width: '100%', height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 99, transition: 'width 0.3s' },
+  tinyGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
+  tinyCard: { background: '#f9fafb', borderRadius: 12, padding: 12, border: '1px solid #e5e7eb', textAlign: 'center' },
+  tinyIcon: { fontSize: 24, marginBottom: 2 },
+  tinyVal: { fontSize: 20, fontWeight: 700 },
+  tinyLabel: { fontSize: 11, color: '#6b7280' },
+  sectionTitle: { fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: 8 },
+  npcGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 },
+  npcCard: { background: '#f9fafb', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' },
+  npcRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 },
+  npcAvatar: { width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 700 },
+  npcName: { fontSize: 13, fontWeight: 700, color: '#111827' },
+  npcTitle: { fontSize: 11, color: '#6b7280' },
+  npcState: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#374151', background: '#fff', borderRadius: 8, padding: '4px 10px', border: '1px solid #e5e7eb' },
+  npcZone: { fontSize: 11, color: '#6b7280', marginTop: 8 },
+  monsterGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },
+  monsterCard: { background: '#f9fafb', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' },
+  monsterHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  monsterEmoji: { fontSize: 28 },
+  monsterName: { fontSize: 13, fontWeight: 700, color: '#111827' },
+  monsterZone: { fontSize: 11, color: '#6b7280', background: '#fff', borderRadius: 99, padding: '2px 10px', border: '1px solid #e5e7eb' },
+  monsterHP: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
+  monsterHPLabel: { fontSize: 11, color: '#6b7280' },
+  monsterHPVal: { fontSize: 11, fontWeight: 700, color: '#dc2626' },
+  monsterStats: { display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 11, color: '#6b7280' },
+  eventItem: { display: 'flex', gap: 12, padding: '10px 16px', borderRadius: 8, marginBottom: 4 },
+  eventTime: { fontSize: 11, color: '#6b7280', fontFamily: 'monospace', whiteSpace: 'nowrap' },
+  eventText: { fontSize: 13 },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', borderRadius: 16, padding: '16px 24px', border: '1px solid #e5e7eb', marginBottom: 24, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
+  headerTitle: { fontSize: 22, fontWeight: 700, color: '#111827' },
+  headerSub: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  liveBadge: { display: 'flex', alignItems: 'center', gap: 8, background: '#f0fdf4', borderRadius: 8, padding: '8px 16px', border: '1px solid #bbf7d0' },
+  liveDot: { width: 10, height: 10, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.4)' },
+  liveText: { fontSize: 13, fontWeight: 600, color: '#166534' },
+  waitPage: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f1f5f9' },
+  waitCard: { background: '#fff', borderRadius: 16, padding: 32, border: '1px solid #e5e7eb', maxWidth: 420, textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
+  waitTitle: { fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 8 },
+  waitSub: { fontSize: 14, color: '#6b7280', marginBottom: 20 },
+  waitDot: { width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 8, animation: 'pulse 2s infinite' },
+  waitText: { fontSize: 16, fontWeight: 700, color: '#d97706' },
+  btn: { display: 'inline-block', width: '100%', padding: '14px 0', background: '#4f46e5', color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center', marginTop: 16 },
+};
+
+function HPBar({ hp, maxHp, color }) {
   const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-  const barColor = pct > 50 ? '#16a34a' : pct > 25 ? '#d97706' : '#dc2626';
-  return (
-    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-      <div className="h-full rounded-full transition-all duration-300" style={{ width: pct + '%', backgroundColor: barColor }} />
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, sub, color }) {
-  return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-        <span className="text-xl">{icon}</span>
-      </div>
-      <div className="text-2xl font-bold" style={{ color }}>{value}</div>
-      {sub && <div className="text-xs text-gray-500 mt-1">{sub}</div>}
-    </div>
-  );
-}
-
-function Section({ title, children, className }) {
-  return (
-    <div className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden ${className || ''}`}>
-      <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
-        <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">{title}</h2>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
+  const c = color || (pct > 50 ? '#16a34a' : pct > 25 ? '#d97706' : '#dc2626');
+  return React.createElement('div', { style: S.barBg },
+    React.createElement('div', { style: { ...S.barFill, width: pct + '%', background: c } })
   );
 }
 
@@ -68,27 +117,25 @@ function App() {
   }, [pollGameState]);
 
   if (!connected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f1f5f9' }}>
-        <div className="text-center px-4">
-          <div className="text-7xl mb-8">🎮</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">游戏数据分析平台</h1>
-          <p className="text-gray-600 text-lg mb-8">Arcane Village · 实时数据可视化</p>
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 max-w-lg mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-amber-600 text-lg font-bold">等待游戏连接...</span>
-            </div>
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              打开奥术村庄游戏并开始游玩，<br />仪表盘将自动实时同步所有数据。
-            </p>
-            <a href="https://yygssh.github.io/arcane-village/" target="_blank" rel="noopener noreferrer"
-              className="inline-block w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-base font-bold transition-colors shadow-md">
-              🏰 打开奥术村庄
-            </a>
-          </div>
-        </div>
-      </div>
+    return React.createElement('div', { style: S.waitPage },
+      React.createElement('div', { style: S.waitCard },
+        React.createElement('div', { style: { fontSize: 64, marginBottom: 16 } }, '\ud83c\udfae'),
+        React.createElement('h1', { style: S.waitTitle }, 'Game Data Analyzer'),
+        React.createElement('p', { style: S.waitSub }, 'Arcane Village \xb7 Real-time Dashboard'),
+        React.createElement('div', { style: { marginBottom: 16 } },
+          React.createElement('span', { style: S.waitDot }),
+          React.createElement('span', { style: S.waitText }, 'Waiting for game data...')
+        ),
+        React.createElement('p', { style: { fontSize: 13, color: '#6b7280', lineHeight: 1.6 } },
+          'Open Arcane Village in a new tab and start playing.', React.createElement('br'),
+          'This dashboard will sync automatically.'
+        ),
+        React.createElement('a', {
+          href: 'https://yygssh.github.io/arcane-village/',
+          target: '_blank', rel: 'noopener noreferrer',
+          style: S.btn,
+        }, '\ud83c\udff0 Open Arcane Village')
+      )
     );
   }
 
@@ -97,214 +144,247 @@ function App() {
   const monsters = gameState?.monsters || [];
   const events = gameState?.recentEvents || [];
   const mpPct = p.maxMp ? Math.round(p.mp / p.maxMp * 100) : 0;
-
   const totalEntities = 1 + npcs.length + monsters.length;
+  const aliveCount = (p.alive ? 1 : 0) + monsters.filter(m => m.hp > 0).length;
+
   const zoneCounts = {};
   [p, ...npcs, ...monsters].forEach(e => { if (e.zone) zoneCounts[e.zone] = (zoneCounts[e.zone] || 0) + 1; });
-  const zoneEntries = Object.entries(zoneCounts).map(([k, v]) => ({ name: ZONE_MAP[k] || k, count: v })).sort((a, b) => b.count - a.count);
+  const zoneEntries = Object.entries(zoneCounts).map(([k, v]) => ({ name: ZONE_CN[k] || k, count: v })).sort((a, b) => b.count - a.count);
   const typeDist = [
-    { name: '玩家', value: 1 },
+    { name: 'Player', value: 1 },
     { name: 'NPC', value: npcs.length },
-    { name: '怪物', value: monsters.length },
+    { name: 'Monster', value: monsters.length },
   ];
   const combatRows = [
-    { name: '玩家', hp: p.hp || 0, atk: p.atk || 0 },
+    { name: 'Player', hp: p.hp || 0, atk: p.atk || 0 },
     ...monsters.map(m => ({ name: m.type || '?', hp: m.hp || 0, atk: m.atk || 0 })),
   ];
 
-  return (
-    <div className="min-h-screen p-4 lg:p-8" style={{ background: '#f1f5f9' }}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* ===== HEADER ===== */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-2xl px-6 py-4 shadow-sm border border-gray-200">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">🎮 游戏数据分析平台</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
-              Arcane Village · 回合 {gameState?.turn} · 运行 {Math.floor((gameState?.gameTime || 0) / 1000)}s
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-green-50 rounded-lg px-4 py-2 border border-green-200">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow shadow-green-500/30" />
-            <span className="text-sm font-semibold text-green-700">实时同步中</span>
-          </div>
-        </div>
+  return React.createElement('div', { style: S.page },
+    React.createElement('div', { style: S.container },
+      // Header
+      React.createElement('div', { style: S.header },
+        React.createElement('div', null,
+          React.createElement('h1', { style: S.headerTitle }, '\ud83c\udfae Game Data Analyzer'),
+          React.createElement('p', { style: S.headerSub }, 'Arcane Village \xb7 Turn ' + (gameState?.turn || 0) + ' \xb7 ' + Math.floor((gameState?.gameTime || 0) / 1000) + 's')
+        ),
+        React.createElement('div', { style: S.liveBadge },
+          React.createElement('span', { style: S.liveDot }),
+          React.createElement('span', { style: S.liveText }, 'Live')
+        )
+      ),
 
-        {/* ===== ROW 1: Player + Overview (2 columns) ===== */}
-        <div className="grid grid-cols-2 gap-6">
-          {/* Player Status */}
-          <Section title="🎯 玩家状态">
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <StatCard icon="⭐" label="等级" value={'Lv.' + p.level} sub={p.class || '-'} color="#d97706" />
-              <StatCard icon="💰" label="金币" value={p.gold || 0} sub={'经验 ' + (p.exp || 0) + '/' + (p.level * 20)} color="#b45309" />
-              <StatCard icon="⚔️" label="攻击力" value={p.atk || 0} sub={'防御 ' + (p.def || 0)} color="#ea580c" />
-              <StatCard icon="🗡️" label="武器" value={p.weapon || '无'} sub={p.hasFireball ? '🔥 火球术' : '无法术'} color="#7c3aed" />
-            </div>
-            <div className="space-y-3">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">❤️ 生命值</span>
-                  <span className="text-sm font-bold text-red-600">{p.hp} / {p.maxHp}</span>
-                </div>
-                <HPBar hp={p.hp || 0} maxHp={p.maxHp || 1} />
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">💙 法力值</span>
-                  <span className="text-sm font-bold text-blue-600">{p.mp} / {p.maxMp}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: mpPct + '%' }} />
-                </div>
-              </div>
-            </div>
-          </Section>
+      // Row 1: Player + Overview (2 columns)
+      React.createElement('div', { style: S.row },
+        // Player Status
+        React.createElement('div', { style: S.col2 },
+          React.createElement('div', { style: S.card },
+            React.createElement('div', { style: S.cardHead },
+              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83c\udfaf Player Status')
+            ),
+            React.createElement('div', { style: S.cardBody },
+              React.createElement('div', { style: S.statGrid },
+                ...[
+                  { icon: '\u2b50', label: 'Level', val: 'Lv.' + p.level, sub: p.class || '-', color: '#d97706' },
+                  { icon: '\ud83d\udcb0', label: 'Gold', val: p.gold || 0, sub: 'Exp ' + (p.exp || 0) + '/' + (p.level * 20), color: '#b45309' },
+                  { icon: '\u2694\ufe0f', label: 'ATK', val: p.atk || 0, sub: 'DEF ' + (p.def || 0), color: '#ea580c' },
+                  { icon: '\ud83d\udde1\ufe0f', label: 'Weapon', val: p.weapon || 'None', sub: p.hasFireball ? 'Fireball' : 'None', color: '#7c3aed' },
+                ].map((s, i) => React.createElement('div', { key: i, style: S.statCard },
+                  React.createElement('div', { style: S.statIcon }, s.icon),
+                  React.createElement('div', { style: S.statLabel }, s.label),
+                  React.createElement('div', { style: { ...S.statVal, color: s.color } }, s.val),
+                  React.createElement('div', { style: S.statSub }, s.sub)
+                ))
+              ),
+              // HP bar
+              React.createElement('div', { style: S.hpBar },
+                React.createElement('div', { style: S.hpLabel },
+                  React.createElement('span', { style: S.hpLabelText }, '\u2764\ufe0f HP'),
+                  React.createElement('span', { style: { ...S.hpVal, color: '#dc2626' } }, p.hp + ' / ' + p.maxHp)
+                ),
+                React.createElement(HPBar, { hp: p.hp || 0, maxHp: p.maxHp || 1 })
+              ),
+              // MP bar
+              React.createElement('div', { style: { ...S.hpBar, marginBottom: 0 } },
+                React.createElement('div', { style: S.hpLabel },
+                  React.createElement('span', { style: S.hpLabelText }, '\ud83d\udc99 MP'),
+                  React.createElement('span', { style: { ...S.hpVal, color: '#2563eb' } }, p.mp + ' / ' + p.maxMp)
+                ),
+                React.createElement('div', { style: S.barBg },
+                  React.createElement('div', { style: { ...S.barFill, width: mpPct + '%', background: '#3b82f6' } })
+                )
+              )
+            )
+          )
+        ),
 
-          {/* Battle Overview + Pie */}
-          <Section title="📊 战场概览">
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {[
-                { icon: '👤', label: '总实体', val: totalEntities, color: '#1e293b' },
-                { icon: '✅', label: '存活', val: (p.alive ? 1 : 0) + monsters.filter(m => m.hp > 0).length, color: '#16a34a' },
-                { icon: '👹', label: '怪物', val: monsters.length, color: '#dc2626' },
-                { icon: '👥', label: 'NPC', val: npcs.length, color: '#7c3aed' },
-              ].map((s, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
-                  <div className="text-2xl mb-1">{s.icon}</div>
-                  <div className="text-xl font-bold" style={{ color: s.color }}>{s.val}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">实体分布</h4>
-            <ResponsiveContainer width="100%" height={150}>
-              <PieChart>
-                <Pie data={typeDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={55}
-                  label={({ name, value }) => name + ' ' + value}>
-                  {typeDist.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#1e293b' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Section>
-        </div>
+        // Battle Overview
+        React.createElement('div', { style: S.col2 },
+          React.createElement('div', { style: S.card },
+            React.createElement('div', { style: S.cardHead },
+              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udcca Battle Overview')
+            ),
+            React.createElement('div', { style: S.cardBody },
+              React.createElement('div', { style: S.tinyGrid },
+                ...[
+                  { icon: '\ud83d\udc64', label: 'Total', val: totalEntities, color: '#1e293b' },
+                  { icon: '\u2705', label: 'Alive', val: aliveCount, color: '#16a34a' },
+                  { icon: '\ud83d\udc79', label: 'Monsters', val: monsters.length, color: '#dc2626' },
+                  { icon: '\ud83d\udc65', label: 'NPCs', val: npcs.length, color: '#7c3aed' },
+                ].map((s, i) => React.createElement('div', { key: i, style: S.tinyCard },
+                  React.createElement('div', { style: S.tinyIcon }, s.icon),
+                  React.createElement('div', { style: { ...S.tinyVal, color: s.color } }, s.val),
+                  React.createElement('div', { style: S.tinyLabel }, s.label)
+                ))
+              ),
+              React.createElement('div', { style: { ...S.sectionTitle, marginTop: 16 } }, 'Entity Distribution'),
+              React.createElement(ResponsiveContainer, { width: '100%', height: 140 },
+                React.createElement(PieChart, null,
+                  React.createElement(Pie, { data: typeDist, dataKey: 'value', nameKey: 'name', cx: '50%', cy: '50%', outerRadius: 50, label: ({ name, value }) => name + ' ' + value },
+                    typeDist.map((_, i) => React.createElement(Cell, { key: i, fill: PIE_COLORS[i] }))
+                  ),
+                  React.createElement(Tooltip, { contentStyle: { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, color: '#1e293b', fontSize: 12 } })
+                )
+              )
+            )
+          )
+        )
+      ),
 
-        {/* ===== ROW 2: Charts (2 columns) ===== */}
-        <div className="grid grid-cols-2 gap-6">
-          <Section title="📍 区域分布">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={zoneEntries} layout="vertical" margin={{ left: 10, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis type="number" tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis type="category" dataKey="name" width={70} tick={{ fill: '#334155', fontSize: 12 }} />
-                <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#1e293b' }} />
-                <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Section>
+      // Row 2: Zone + Combat (2 columns)
+      React.createElement('div', { style: S.row },
+        React.createElement('div', { style: S.col2 },
+          React.createElement('div', { style: S.card },
+            React.createElement('div', { style: S.cardHead },
+              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udccd Zone Distribution')
+            ),
+            React.createElement('div', { style: S.cardBody },
+              React.createElement(ResponsiveContainer, { width: '100%', height: 280 },
+                React.createElement(BarChart, { data: zoneEntries, layout: 'vertical', margin: { left: 10, right: 20 } },
+                  React.createElement(CartesianGrid, { strokeDasharray: '3 3', stroke: '#e5e7eb' }),
+                  React.createElement(XAxis, { type: 'number', tick: { fill: '#64748b', fontSize: 11 } }),
+                  React.createElement(YAxis, { type: 'category', dataKey: 'name', width: 75, tick: { fill: '#334155', fontSize: 11 } }),
+                  React.createElement(Tooltip, { contentStyle: { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, color: '#1e293b', fontSize: 12 } }),
+                  React.createElement(Bar, { dataKey: 'count', fill: '#6366f1', radius: [0, 4, 4, 0] })
+                )
+              )
+            )
+          )
+        ),
+        React.createElement('div', { style: S.col2 },
+          React.createElement('div', { style: S.card },
+            React.createElement('div', { style: S.cardHead },
+              React.createElement('h2', { style: S.cardHeadTitle }, '\u2694\ufe0f Combat Power')
+            ),
+            React.createElement('div', { style: S.cardBody },
+              combatRows.length > 1
+                ? React.createElement(ResponsiveContainer, { width: '100%', height: 280 },
+                    React.createElement(BarChart, { data: combatRows, margin: { left: 10, right: 20 } },
+                      React.createElement(CartesianGrid, { strokeDasharray: '3 3', stroke: '#e5e7eb' }),
+                      React.createElement(XAxis, { dataKey: 'name', tick: { fill: '#64748b', fontSize: 10 } }),
+                      React.createElement(YAxis, { tick: { fill: '#64748b', fontSize: 11 } }),
+                      React.createElement(Tooltip, { contentStyle: { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, color: '#1e293b', fontSize: 12 } }),
+                      React.createElement(Bar, { dataKey: 'hp', fill: '#f87171', radius: [4, 4, 0, 0], name: 'HP' }),
+                      React.createElement(Bar, { dataKey: 'atk', fill: '#fbbf24', radius: [4, 4, 0, 0], name: 'ATK' })
+                    )
+                  )
+                : React.createElement('p', { style: { color: '#9ca3af', textAlign: 'center', padding: '48px 0' } }, 'Waiting for monsters...')
+            )
+          )
+        )
+      ),
 
-          <Section title="⚔️ 战力对比">
-            {combatRows.length > 1 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={combatRows} margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#1e293b' }} />
-                  <Bar dataKey="hp" fill="#f87171" radius={[4, 4, 0, 0]} name="HP" />
-                  <Bar dataKey="atk" fill="#fbbf24" radius={[4, 4, 0, 0]} name="攻击" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <p className="text-gray-400 text-center py-12">等待怪物出现...</p>}
-          </Section>
-        </div>
+      // Row 3: NPCs (full width)
+      React.createElement('div', { style: S.full },
+        React.createElement('div', { style: S.card },
+          React.createElement('div', { style: S.cardHead },
+            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udc65 NPC Status (' + npcs.length + ')')
+          ),
+          React.createElement('div', { style: S.cardBody },
+            React.createElement('div', { style: S.npcGrid },
+              npcs.map((n, i) => {
+                const st = n.state || 'idle';
+                const si = { walking: '\ud83d\udeb6 Moving', talking: '\ud83d\udcac Talking', casting: '\u2728 Casting', idle: '\ud83d\udca4 Idle' };
+                const nc = NPC_COLORS[n.name] || '#6366f1';
+                return React.createElement('div', { key: i, style: S.npcCard },
+                  React.createElement('div', { style: S.npcRow },
+                    React.createElement('div', { style: { ...S.npcAvatar, background: nc } }, n.name[0]),
+                    React.createElement('div', null,
+                      React.createElement('div', { style: S.npcName }, n.name),
+                      React.createElement('div', { style: S.npcTitle }, n.title)
+                    )
+                  ),
+                  React.createElement('div', { style: S.npcState }, si[st] || st),
+                  React.createElement('div', { style: S.npcZone }, '\ud83d\udccd ' + (ZONE_CN[n.zone] || n.zone))
+                );
+              })
+            )
+          )
+        )
+      ),
 
-        {/* ===== ROW 3: NPC (full width grid) ===== */}
-        <Section title="👥 NPC 实时状态">
-          <div className="grid grid-cols-5 gap-4">
-            {npcs.map((n, i) => {
-              const stateIcons = { walking: '🚶', talking: '💬', casting: '✨', idle: '💤' };
-              const stateLabels = { walking: '移动中', talking: '对话中', casting: '施法中', idle: '待机' };
-              const st = n.state || 'idle';
-              const npcColor = { '艾德里克': '#7c3aed', '莱拉': '#22c55e', '布罗加': '#f97316', '米拉': '#ef4444', '凯尔': '#eab308' }[n.name] || '#6366f1';
-              return (
-                <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-inner"
-                      style={{ backgroundColor: npcColor }}>
-                      {n.name[0]}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">{n.name}</div>
-                      <div className="text-xs text-gray-500">{n.title}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-white rounded-lg px-2.5 py-1.5 border border-gray-200">
-                    <span>{stateIcons[st]}</span>
-                    <span>{stateLabels[st]}</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">📍 {ZONE_MAP[n.zone] || n.zone}</div>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
+      // Row 4: Monsters
+      React.createElement('div', { style: S.full },
+        React.createElement('div', { style: S.card },
+          React.createElement('div', { style: S.cardHead },
+            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udc79 Active Monsters (' + monsters.length + ')')
+          ),
+          React.createElement('div', { style: S.cardBody },
+            monsters.length === 0
+              ? React.createElement('p', { style: { color: '#9ca3af', textAlign: 'center', padding: 16 } }, 'No monsters')
+              : React.createElement('div', { style: S.monsterGrid },
+                  monsters.map((m, i) => React.createElement('div', { key: i, style: S.monsterCard },
+                    React.createElement('div', { style: S.monsterHead },
+                      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                        React.createElement('span', { style: S.monsterEmoji }, m.emoji),
+                        React.createElement('span', { style: S.monsterName }, m.type)
+                      ),
+                      React.createElement('span', { style: S.monsterZone }, ZONE_CN[m.zone] || m.zone)
+                    ),
+                    React.createElement('div', { style: S.monsterHP },
+                      React.createElement('span', { style: S.monsterHPLabel }, 'HP'),
+                      React.createElement('span', { style: S.monsterHPVal }, m.hp + ' / ' + m.maxHp)
+                    ),
+                    React.createElement(HPBar, { hp: m.hp || 0, maxHp: m.maxHp || 1 }),
+                    React.createElement('div', { style: S.monsterStats },
+                      React.createElement('span', null, 'ATK ' + m.atk),
+                      React.createElement('span', null, 'DEF ' + m.def)
+                    )
+                  ))
+                )
+          )
+        )
+      ),
 
-        {/* ===== ROW 4: Monsters ===== */}
-        <Section title={'👹 活跃怪物 (' + monsters.length + ')'}>
-          {monsters.length === 0 ? (
-            <p className="text-gray-400 text-center py-4">暂无怪物</p>
-          ) : (
-            <div className="grid grid-cols-4 gap-4">
-              {monsters.map((m, i) => (
-                <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{m.emoji}</span>
-                      <span className="text-sm font-bold text-gray-900">{m.type}</span>
-                    </div>
-                    <span className="text-xs text-gray-500 bg-white rounded-full px-2 py-0.5 border border-gray-200">
-                      {ZONE_MAP[m.zone] || m.zone}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mb-1.5">
-                    <span className="text-xs text-gray-500">HP</span>
-                    <span className="text-xs font-bold text-red-600">{m.hp} / {m.maxHp}</span>
-                  </div>
-                  <HPBar hp={m.hp || 0} maxHp={m.maxHp || 1} />
-                  <div className="flex justify-between mt-3 text-xs text-gray-500">
-                    <span>攻击 {m.atk}</span>
-                    <span>防御 {m.def}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        {/* ===== ROW 5: Events ===== */}
-        <Section title="📜 事件日志">
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
-            {events.length === 0 && <p className="text-gray-400 text-sm py-2">等待游戏事件...</p>}
-            {events.map((e, i) => {
-              const tags = {
-                combat: { border: 'border-l-red-500', bg: 'bg-red-50', text: 'text-gray-900' },
-                cast: { border: 'border-l-amber-500', bg: 'bg-amber-50', text: 'text-gray-900' },
-                talk: { border: 'border-l-emerald-500', bg: 'bg-emerald-50', text: 'text-gray-900' },
-                loot: { border: 'border-l-yellow-500', bg: 'bg-yellow-50', text: 'text-gray-900' },
-                system: { border: 'border-l-gray-400', bg: 'bg-gray-50', text: 'text-gray-700 italic' },
+      // Row 5: Events
+      React.createElement('div', { style: S.full },
+        React.createElement('div', { style: S.card },
+          React.createElement('div', { style: S.cardHead },
+            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udcdc Event Log')
+          ),
+          React.createElement('div', { style: { ...S.cardBody, maxHeight: 280, overflowY: 'auto' } },
+            events.length === 0 && React.createElement('p', { style: { color: '#9ca3af', fontSize: 13, padding: 8 } }, 'Waiting for events...'),
+            events.map((e, i) => {
+              const catColors = {
+                combat: { border: '#ef4444', bg: '#fef2f2', text: '#1e293b' },
+                cast: { border: '#f59e0b', bg: '#fffbeb', text: '#1e293b' },
+                talk: { border: '#10b981', bg: '#ecfdf5', text: '#1e293b' },
+                loot: { border: '#f59e0b', bg: '#fefce8', text: '#1e293b' },
+                system: { border: '#9ca3af', bg: '#f9fafb', text: '#6b7280' },
               };
-              const s = tags[e.cat] || { border: 'border-l-gray-300', bg: 'bg-white', text: 'text-gray-800' };
-              return (
-                <div key={i} className={`flex items-start gap-3 py-2.5 px-4 rounded-lg border-l-4 ${s.border} ${s.bg}`}>
-                  <span className="text-xs text-gray-500 font-mono whitespace-nowrap mt-0.5">[{e.time}]</span>
-                  <span className={`text-sm ${s.text}`}>{e.msg}</span>
-                </div>
+              const cc = catColors[e.cat] || { border: '#d1d5db', bg: '#fff', text: '#374151' };
+              return React.createElement('div', {
+                key: i,
+                style: { ...S.eventItem, borderLeft: '3px solid ' + cc.border, background: cc.bg }
+              },
+                React.createElement('span', { style: S.eventTime }, '[' + e.time + ']'),
+                React.createElement('span', { style: { ...S.eventText, color: cc.text, fontStyle: e.cat === 'system' ? 'italic' : 'normal' } }, e.msg)
               );
-            })}
-          </div>
-        </Section>
-      </div>
-    </div>
+            })
+          )
+        )
+      )
+    )
   );
 }
 
