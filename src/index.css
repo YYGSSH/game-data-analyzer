@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: global scrollbar styling */
+::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* Tailwind gray-300 */
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9; /* Tailwind gray-100 */
+}
