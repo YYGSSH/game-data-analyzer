@@ -1,0 +1,565 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>奥术村庄</title>
+<meta name="description" content="微型开放世界游戏 — 探索中世纪奇幻村庄，与AI角色互动，对战怪物，学习魔法！">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#1a1410;color:#d4c5a9;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
+#startScreen{position:fixed;inset:0;z-index:999;background:radial-gradient(ellipse at center,#2a2010,#0d0a05);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#startScreen h1{font-size:48px;color:#e8d5a8;text-shadow:0 0 30px rgba(200,150,50,.5);margin-bottom:8px;letter-spacing:4px}
+#startScreen .sub{font-size:15px;color:#8a7a6a;margin-bottom:36px}
+#startScreen .btn{padding:14px 48px;font-size:20px;background:linear-gradient(180deg,#6a4a2a,#4a2a1a);border:2px solid #8a6a4a;border-radius:8px;color:#e8d5a8;cursor:pointer;letter-spacing:2px;transition:.2s}
+#startScreen .btn:hover{background:linear-gradient(180deg,#8a6a3a,#6a3a1a)}
+#startScreen .hints{margin-top:24px;font-size:12px;color:#5a4a3a;text-align:center;line-height:1.9}
+#gameArea{display:none;width:100%;height:100vh;max-width:1100px;padding:8px;gap:8px}
+#canvasWrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0}
+canvas{border:2px solid #4a3728;border-radius:4px}
+#sideBar{width:270px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.panel{background:#2a221a;border:1px solid #4a3728;border-radius:6px;padding:8px}
+.panel h3{font-size:11px;color:#8a7a6a;margin-bottom:4px;letter-spacing:1px}
+#playerStats{font-size:11px;line-height:1.6}
+#playerStats .stat-row{display:flex;justify-content:space-between;padding:1px 0}
+#playerStats .hp{color:#cc6666}#playerStats .mp{color:#6688cc}#playerStats .atk{color:#cc8844}#playerStats .gold{color:#ddaa44}#playerStats .exp{color:#88aa44}
+#npcList{display:flex;flex-direction:column;gap:3px;max-height:130px;overflow-y:auto}
+.npc-row{display:flex;align-items:center;gap:6px;padding:4px 6px;background:#1f1812;border-radius:3px;font-size:10px}
+.npc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.npc-name{color:#e8d5a8;font-weight:600;font-size:11px}.npc-detail{color:#8a7a6a;font-size:9px}
+#eventLog{flex:1;overflow-y:auto;min-height:0;font-size:11px}
+#eventLog .entry{padding:2px 0;border-bottom:1px solid #1f1812;line-height:1.4}
+.entry.talk{color:#88bb88}.entry.cast{color:#ddaa44}.entry.combat{color:#cc6644}.entry.system{color:#8a7a6a;font-style:italic}.entry.item{color:#88cc88}.entry.loot{color:#ddaa44}
+#controls{text-align:center;font-size:10px;color:#5a4a3a;padding:5px;background:#1f1812;border-radius:4px;border:1px solid #3a2a1a}
+#statusBar{display:flex;justify-content:space-between;padding:3px 6px;font-size:11px;color:#c9a96e}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#1a1410}::-webkit-scrollbar-thumb{background:#4a3728;border-radius:3px}
+@media(max-width:768px){#gameArea{flex-direction:column}#sideBar{width:100%;max-height:220px;flex-direction:row;flex-wrap:wrap}#sideBar>*{flex:1;min-width:140px}#eventLog{flex:2;max-height:120px}canvas{max-width:100%;max-height:48vh}}
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+<h1>🏰 奥术村庄</h1>
+<div class="sub">— AI Agent 中世纪奇幻世界 —</div>
+<button class="btn" onclick="startGame()">⚔️ 进入村庄</button>
+<div class="hints">
+🎮 WASD 移动 · E 交互 · 空格 观察<br>
+邻近怪物自动战斗 · 踏进建筑按E互动<br>
+🏠酒馆回血 · 🔥铁匠铺买武器 · 🏪商铺买药 · 🏰高塔学法术
+</div>
+</div>
+
+<div id="gameArea">
+<div id="canvasWrap"><canvas id="game"></canvas></div>
+<div id="sideBar">
+<div class="panel"><div id="statusBar"><span id="turnDisp"></span><span id="posDisp"></span></div></div>
+<div id="playerStats" class="panel"><h3>🎮 冒险者 Lv.<span id="plv">1</span></h3></div>
+<div class="panel"><h3>👥 村民</h3><div id="npcList"></div></div>
+<div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0"><h3>📜 事件日志</h3><div id="eventLog"></div></div>
+<div id="controls">🎮 WASD | E交互 | 空格观察 | 邻近怪物自动战斗</div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  常量
+// ═══════════════════════════════════════════════════
+const MAP = [
+  "MMM____WW______",
+  "M______WW__FF__",
+  "___AH___W__FFF_",
+  "___AHP_____FF__",
+  "____H__GG______",
+  "____G__GP_B____",
+  "___GGP_G__B____",
+  "GGG__P__G___F__",
+  "____P__GG__FF__",
+  "____O______FF__",
+  "___S_______F___",
+  "___H_____HH____",
+  "____H___H_____",
+  "___GGG________",
+  "______GGG_____",
+];
+const T_COLORS={G:'#7ec850',F:'#2d6a1e',M:'#666',W:'#3388cc',H:'#b8860b',T:'#8b6914',S:'#daa520',O:'#708090',B:'#555',P:'#a09080',A:'#9acd32',_:'#c4a060'};
+const SOLID=new Set('MW');
+const W=MAP[0].length,H=MAP.length,TS=40;
+
+// 解析地图
+let grid=[];
+for(let r of MAP){let row=[];for(let c of r)row.push(c);grid.push(row);}
+
+// ── NPC 定义 ──────────────────────────────────────────
+const NPC_DEFS=[
+  {id:'eldric',name:'艾德里克',title:'老法师',color:'#9966cc',x:10,y:5,
+   spells:['小火球','治愈','传送','照明术'],lines:['魔法是古老的艺术...','村里的结界需要维护。','小心黑暗森林。']},
+  {id:'lyra',name:'莱拉',title:'精灵商人',color:'#66cc66',x:4,y:10,
+   spells:['照明术'],lines:['欢迎光临！','这批货是远方运来的。','今天的生意不错！']},
+  {id:'brogar',name:'布罗加',title:'矮人铁匠',color:'#cc8844',x:13,y:8,
+   spells:[],lines:['这把剑刚出炉，锋利得很！','好铁才能打好剑！','干活累了，想喝一杯。']},
+  {id:'mira',name:'米拉',title:'酒馆老板娘',color:'#cc6666',x:7,y:3,
+   spells:['治愈'],lines:['来杯蜂蜜酒吧~','最近村里挺热闹的。','有需要随时来酒馆。']},
+  {id:'kael',name:'凯尔',title:'猎人',color:'#cc9944',x:3,y:6,
+   spells:[],lines:['森林那边有动静...','银箭比咒语更管用。','村口我已经检查过了。']},
+];
+
+// ── 怪物定义 ──────────────────────────────────────────
+const MONSTER_TYPES={
+  slime:{name:'史莱姆',emoji:'🟢',hp:25,atk:4,def:0,gold:8,exp:10,color:'#88cc44',size:0.28},
+  wolf:{name:'野狼',emoji:'🐺',hp:45,atk:10,def:2,gold:15,exp:20,color:'#888',size:0.32},
+  goblin:{name:'哥布林',emoji:'👺',hp:35,atk:7,def:1,gold:12,exp:15,color:'#66aa44',size:0.30},
+};
+const MONSTER_KEYS=['slime','wolf','goblin'];
+
+// ── 建筑交互 ──────────────────────────────────────────
+const BUILDINGS={
+  '7,3':{name:'酒馆',emoji:'🍺',act(p){
+    if(p.gold<5){addEvent('system','💰 金币不足！需要5金币。');return;}
+    p.gold-=5;let h=Math.min(p.maxHp,p.hp+25);let r=h-p.hp;p.hp=h;
+    addEvent('item',`🍺 你在酒馆喝了一杯蜂蜜酒，恢复了${r}点生命！`);}},
+  '13,8':{name:'铁匠铺',emoji:'🔥',act(p){
+    if(p.weapon>=3){addEvent('system','⚒️ 你的武器已经是最顶级的了！');return;}
+    let cost=[8,20,45][p.weapon]||45;
+    if(p.gold<cost){addEvent('system',`💰 金币不足！需要${cost}金币。`);return;}
+    p.gold-=cost;p.weapon++;p.atk+=6;
+    let names=['铁剑','精钢长剑','秘银符文剑'];
+    addEvent('item',`⚔️ 布罗加为你打造了一把${names[p.weapon-1]}！攻击+6！`);}},
+  '4,10':{name:'商铺',emoji:'🏪',act(p){
+    if(p.gold<6){addEvent('system','💰 金币不足！需要6金币。');return;}
+    p.gold-=6;let h=Math.min(p.maxHp,p.hp+35);let r=h-p.hp;p.hp=h;
+    addEvent('item',`🧪 你购买了一瓶治疗药水，恢复了${r}点生命！`);}},
+  '10,5':{name:'高塔',emoji:'🏰',act(p){
+    if(p.hasFireball){addEvent('system','🔥 你已经学会了火球术！');return;}
+    if(p.gold<15){addEvent('system',`💰 金币不足！需要15金币。`);return;}
+    p.gold-=15;p.hasFireball=true;
+    addEvent('cast',`🔥 艾德里克教了你火球术！按F键对邻近怪物施放！`);}},
+};
+
+// ═══════════════════════════════════════════════════
+//  游戏状态
+// ═══════════════════════════════════════════════════
+let player={x:6,y:7,hp:100,maxHp:100,mp:50,maxMp:50,atk:8,def:2,gold:10,exp:0,level:1,weapon:0,hasFireball:false,alive:true,lastMove:0};
+let npcs=NPC_DEFS.map(d=>({...structuredClone?.(d)??JSON.parse(JSON.stringify(d)),state:'idle',targetX:null,targetY:null,cooldown:0,stateTimer:0,talkTimer:0}));
+let monsters=[];
+let events=[];
+let dialogBubble=null;
+let turn=0,gameTime=0,gameStarted=false;
+let keys={},lastAtkTime=0;
+
+let canvas,ctx,camX=0,camY=0;
+
+// ═══════════════════════════════════════════════════
+//  工具函数
+// ═══════════════════════════════════════════════════
+function solid(x,y){if(x<0||x>=W||y<0||y>=H)return true;return SOLID.has(grid[y][x]);}
+function npcAt(x,y){for(let n of npcs)if(n.x===x&&n.y===y)return n;return null;}
+function monAt(x,y){for(let m of monsters)if(m.x===x&&m.y===y&&m.hp>0)return m;return null;}
+function anyAt(x,y){return npcAt(x,y)||monAt(x,y);}
+function mdist(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y);}
+function addEvent(cat,msg){events.push({cat,msg,time:turn});if(events.length>300)events.shift();updateEventLog();}
+
+function bfs(sx,sy,tx,ty,skipMonsters){
+  let v=new Set(),q=[[sx,sy,[]]];v.add(sx+','+sy);
+  while(q.length){
+    let[cx,cy,path]=q.shift();
+    if(cx===tx&&cy===ty)return path;
+    for(let[dx,dy]of[[0,-1],[0,1],[-1,0],[1,0]]){
+      let nx=cx+dx,ny=cy+dy;
+      if(solid(nx,ny))continue;
+      if(!(nx===tx&&ny===ty)){
+        if(npcAt(nx,ny))continue;
+        if(!skipMonsters&&monAt(nx,ny))continue;
+      }
+      let k=nx+','+ny;if(!v.has(k)){v.add(k);q.push([nx,ny,[...path,[nx,ny]]]);}
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════
+//  战斗系统
+// ═══════════════════════════════════════════════════
+function dealDamage(attacker,defender,atkStat){
+  let dmg=Math.max(1,atkStat-defender.def+Math.floor(Math.random()*4));
+  defender.hp=Math.max(0,defender.hp-dmg);
+  return dmg;
+}
+
+function combatTick(now){
+  if(!player.alive||now-lastAtkTime<800)return;
+  // 检查邻近怪物
+  for(let m of monsters){
+    if(m.hp<=0)continue;
+    if(mdist(player,m)<=1){
+      lastAtkTime=now;
+      let dmg=dealDamage(player,m,player.atk);
+      addEvent('combat',`⚔️ 你攻击${m.typeName}，造成${dmg}点伤害！`);
+      if(m.hp<=0){
+        addEvent('loot',`💀 ${m.typeName}被击败！获得${m.gold}金币 +${m.exp}经验`);
+        player.gold+=m.gold;player.exp+=m.exp;
+        checkLevelUp();
+      }else{
+        let mdmg=dealDamage(m,player,m.atk);
+        addEvent('combat',`💢 ${m.typeName}反击，对你造成${mdmg}点伤害！`);
+        checkPlayerDeath();
+      }
+      break;
+    }
+  }
+}
+
+function checkLevelUp(){
+  let need=player.level*20;
+  if(player.exp>=need){
+    player.exp-=need;player.level++;player.maxHp+=15;player.hp=player.maxHp;
+    player.maxMp+=8;player.mp=player.maxMp;player.atk+=3;
+    addEvent('system',`🌟 升级！等级${player.level}！全属性提升！`);
+    updatePlayerStats();
+  }
+}
+
+function checkPlayerDeath(){
+  if(player.hp<=0){
+    player.alive=false;
+    addEvent('system','💀 你被击败了！失去了一些金币...');
+    player.gold=Math.max(0,player.gold-Math.floor(player.gold*0.3));
+    player.hp=Math.floor(player.maxHp*0.4);
+    player.x=6;player.y=7;
+    player.alive=true;
+    addEvent('system','✨ 你在村庄广场复活了。');
+  }
+  updatePlayerStats();
+}
+
+// ═══════════════════════════════════════════════════
+//  怪物AI & 刷新
+// ═══════════════════════════════════════════════════
+function spawnMonster(){
+  if(monsters.filter(m=>m.hp>0).length>=7)return;
+  let type=MONSTER_KEYS[Math.floor(Math.random()*MONSTER_KEYS.length)];
+  let t=MONSTER_TYPES[type];
+  // 找远离玩家的位置
+  let tries=0;
+  while(tries<100){
+    let x=Math.floor(Math.random()*W),y=Math.floor(Math.random()*H);
+    if(!solid(x,y)&&!anyAt(x,y)&&mdist({x,y},player)>6){
+      monsters.push({x,y,hp:t.hp,maxHp:t.hp,atk:t.atk,def:t.def,gold:t.gold,exp:t.exp,color:t.color,size:t.size,emoji:t.emoji,typeName:t.name,type:type,targetX:null,targetY:null,cooldown:0});
+      addEvent('system',`👹 一只${t.name}在(${x},${y})出现了！`);
+      return;
+    }
+    tries++;
+  }
+}
+
+function updateMonsters(now){
+  for(let m of monsters){
+    if(m.hp<=0)continue;
+    // AI决策 (每1.2秒)
+    if(m.cooldown>0){m.cooldown--;continue;}
+    let d=mdist(player,m);
+    if(d<=5&&player.alive){
+      // 追击玩家
+      let path=bfs(m.x,m.y,player.x,player.y,true);
+      if(path&&path.length>0){
+        let[nx,ny]=path[0];
+        if(!anyAt(nx,ny)||(nx===player.x&&ny===player.y)){m.x=nx;m.y=ny;}
+      }
+    }else{
+      // 随机走动
+      if(!m.targetX||(m.x===m.targetX&&m.y===m.targetY)){
+        let cx=m.x+Math.floor(Math.random()*5)-2,cy=m.y+Math.floor(Math.random()*5)-2;
+        if(cx>=0&&cx<W&&cy>=0&&cy<H&&!solid(cx,cy)&&!anyAt(cx,cy)){
+          m.targetX=cx;m.targetY=cy;
+        }
+      }
+      if(m.targetX!==null&&(m.x!==m.targetX||m.y!==m.targetY)){
+        let path=bfs(m.x,m.y,m.targetX,m.targetY,true);
+        if(path&&path.length>0){let[nx,ny]=path[0];if(!anyAt(nx,ny)){m.x=nx;m.y=ny;}}
+        else{m.targetX=null;m.targetY=null;}
+      }
+    }
+    m.cooldown=3;
+  }
+  // 清理死怪
+  monsters=monsters.filter(m=>m.hp>0||turn-m._diedTurn<5);
+  for(let m of monsters)if(m.hp<=0&&!m._diedTurn)m._diedTurn=turn;
+}
+
+// ═══════════════════════════════════════════════════
+//  NPC AI
+// ═══════════════════════════════════════════════════
+function updateNPCs(dt){
+  gameTime+=dt;
+  if(Math.floor(gameTime/1500)===Math.floor((gameTime-dt)/1500))return;
+  for(let n of npcs){
+    if(n.talkTimer>0){n.talkTimer-=1.5;continue}
+    if(n.cooldown>0){n.cooldown--;continue}
+    // 施法
+    if(n.spells.length&&n.mp>=8&&Math.random()<0.06){
+      let sp=n.spells[Math.floor(Math.random()*n.spells.length)];
+      if(sp==='治愈'&&n.hp<n.maxHp-15){n.hp=Math.min(n.maxHp,n.hp+20);n.mp-=12;n.state='casting';addEvent('cast',`${n.name}对自己施放✨治愈术！`);n.cooldown=10;continue}
+      if(sp==='照明术'){n.mp-=3;n.state='casting';addEvent('cast',`${n.name}施放💡照明术`);n.cooldown=8;continue}
+      if(sp==='小火球'&&Math.random()<0.2){n.mp-=10;n.state='casting';addEvent('cast',`${n.name}发射🔥火球！`);n.cooldown=12;continue}
+    }
+    // NPC间对话
+    let nearby=[];for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){let o=npcAt(n.x+dx,n.y+dy);if(o&&o!==n)nearby.push(o)}
+    if(nearby.length&&Math.random()<0.2){let t=nearby[Math.floor(Math.random()*nearby.length)];addEvent('talk',`${n.name}和${t.name}聊起了村庄的近况`);n.state='talking';n.talkTimer=3;t.state='talking';t.talkTimer=3;n.cooldown=6;continue}
+    // 移动
+    if(!n.targetX||(n.x===n.targetX&&n.y===n.targetY)){let tries=0;while(tries<30){let tx=Math.floor(Math.random()*W),ty=Math.floor(Math.random()*H);if(!solid(tx,ty)&&!(tx===n.x&&ty===n.y)&&!anyAt(tx,ty)){let p=bfs(n.x,n.y,tx,ty,true);if(p&&p.length>0){n.targetX=tx;n.targetY=ty;n.state='walking';break}}tries++}n.cooldown=4;continue}
+    if(n.targetX!==null){let p=bfs(n.x,n.y,n.targetX,n.targetY,true);if(p&&p.length>0){let[nx,ny]=p[0];if(!anyAt(nx,ny)){n.x=nx;n.y=ny;n.state='walking'}}else{n.targetX=null;n.targetY=null}}
+    if(n.mp<n.maxMp)n.mp=Math.min(n.maxMp,n.mp+1);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  玩家输入
+// ═══════════════════════════════════════════════════
+function handleInput(now){
+  if(!player.alive)return;
+  if(now-player.lastMove<180)return; // 步进冷却180ms
+  let dx=0,dy=0;
+  if(keys['KeyW']||keys['ArrowUp'])dy=-1;
+  else if(keys['KeyS']||keys['ArrowDown'])dy=1;
+  if(keys['KeyA']||keys['ArrowLeft'])dx=-1;
+  else if(keys['KeyD']||keys['ArrowRight'])dx=1;
+  if(dx===0&&dy===0)return;
+  let nx=player.x+dx,ny=player.y+dy;
+  if(solid(nx,ny))return;
+  let n=npcAt(nx,ny),m=monAt(nx,ny);
+  if(m&&m.hp>0){
+    addEvent('combat',`⚔️ 你冲向${m.typeName}！`);
+    player.x=nx;player.y=ny;player.lastMove=now;return;
+  }
+  if(n){addEvent('system',`${n.name}站在这里。按E和${n.name}对话。`);return}
+  player.x=nx;player.y=ny;player.lastMove=now;
+}
+
+// ═══════════════════════════════════════════════════
+//  Canvas渲染
+// ═══════════════════════════════════════════════════
+function drawTile(cx,cy,t){
+  ctx.fillStyle=T_COLORS[t]||'#7ec850';ctx.fillRect(cx,cy,TS,TS);
+  if(t==='F'){ctx.fillStyle='#1a4a0e';ctx.beginPath();ctx.arc(cx+TS/2,cy+TS/2,TS*.26,0,Math.PI*2);ctx.fill();ctx.fillStyle='#3a7a2e';ctx.beginPath();ctx.arc(cx+TS/3,cy+TS/3,TS*.18,0,Math.PI*2);ctx.fill()}
+  else if(t==='M'){ctx.fillStyle='#888';ctx.beginPath();ctx.moveTo(cx,cy+TS);ctx.lineTo(cx+TS/2,cy);ctx.lineTo(cx+TS,cy+TS);ctx.fill();ctx.fillStyle='#aaa';ctx.beginPath();ctx.moveTo(cx+TS/4,cy+TS*.5);ctx.lineTo(cx+TS/2,cy);ctx.lineTo(cx+TS*.75,cy+TS*.5);ctx.fill()}
+  else if(t==='W'){ctx.fillStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.ellipse(cx+TS/2,cy+TS/2,TS*.3,TS*.18,0,0,Math.PI*2);ctx.fill()}
+  else if(t==='H'){ctx.fillStyle='#8b4513';ctx.fillRect(cx+TS*.15,cy+TS*.25,TS*.7,TS*.75);ctx.fillStyle='#c33';ctx.beginPath();ctx.moveTo(cx,cy+TS*.25);ctx.lineTo(cx+TS/2,cy);ctx.lineTo(cx+TS,cy+TS*.25);ctx.fill()}
+  else if(t==='O'){ctx.fillStyle='#555';ctx.fillRect(cx+TS*.2,cy+TS*.05,TS*.6,TS*.95);ctx.fillStyle='#77a';ctx.beginPath();ctx.arc(cx+TS/2,cy+TS*.05,TS*.22,Math.PI,0);ctx.fill()}
+  else if(t==='B'){ctx.fillStyle='#444';ctx.fillRect(cx+TS*.2,cy+TS*.2,TS*.6,TS*.6);ctx.fillStyle='#f60';ctx.beginPath();ctx.arc(cx+TS/2,cy+TS/2,TS*.12,0,Math.PI*2);ctx.fill()}
+  else if(t==='A'){ctx.fillStyle='#ba4';for(let i=0;i<3;i++)ctx.fillRect(cx+TS*.2,cy+TS*(.2+i*.25),TS*.6,TS*.1)}
+  else if(t==='T'){ctx.fillStyle='#8b6914';ctx.fillRect(cx+TS*.1,cy+TS*.25,TS*.8,TS*.75);ctx.fillStyle='#c33';ctx.beginPath();ctx.moveTo(cx,cy+TS*.25);ctx.lineTo(cx+TS/2,cy);ctx.lineTo(cx+TS,cy+TS*.25);ctx.fill();ctx.fillStyle='#ff8';ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('🍺',cx+TS/2,cy+TS*.65)}
+  else if(t==='S'){ctx.fillStyle='#daa520';ctx.fillRect(cx+TS*.1,cy+TS*.25,TS*.8,TS*.75);ctx.fillStyle='#c33';ctx.beginPath();ctx.moveTo(cx,cy+TS*.25);ctx.lineTo(cx+TS/2,cy);ctx.lineTo(cx+TS,cy+TS*.25);ctx.fill()}
+  else if(t==='P'){ctx.fillStyle='#b0a090';ctx.fillRect(cx+2,cy+2,TS-4,TS-4);ctx.fillStyle='rgba(255,255,255,.1)';ctx.beginPath();ctx.arc(cx+TS/2,cy+TS/2,TS*.15,0,Math.PI*2);ctx.fill()}
+  ctx.strokeStyle='rgba(0,0,0,.12)';ctx.strokeRect(cx,cy,TS,TS);
+}
+
+function drawChar(x,y,color,label,isPlayer,size,hpPct){
+  let cx=x*TS+TS/2,cy=y*TS+TS/2,r=size||TS*.33;
+  ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(cx,cy+r*.85,r*.75,r*.2,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(cx,cy-r*.2,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.arc(cx-r*.2,cy-r*.4,r*.35,0,Math.PI*2);ctx.fill();
+  if(isPlayer){ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();ctx.lineWidth=1}
+  // 标签
+  ctx.fillStyle='#fff';ctx.font=`bold ${Math.floor(TS*.22)}px sans-serif`;ctx.textAlign='center';
+  ctx.fillText(label,cx,cy-r*.85-TS*.05);
+  // 血条(怪物)
+  if(hpPct!==undefined&&hpPct<1){
+    let bw=TS*.5,bh=3;ctx.fillStyle='#333';ctx.fillRect(cx-bw/2,cy-r*.85-TS*.1,bw,bh);
+    ctx.fillStyle=hpPct>.5?'#5a5':hpPct>.25?'#ca5':'#c55';ctx.fillRect(cx-bw/2,cy-r*.85-TS*.1,bw*hpPct,bh);
+  }
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  let tx=player.x*TS+TS/2-canvas.width/2,ty=player.y*TS+TS/2-canvas.height/2;
+  tx=Math.max(0,Math.min(W*TS-canvas.width,tx));ty=Math.max(0,Math.min(H*TS-canvas.height,ty));
+  camX+=(tx-camX)*.12;camY+=(ty-camY)*.12;
+  ctx.save();ctx.translate(Math.round(-camX),Math.round(-camY));
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)drawTile(x*TS,y*TS,grid[y][x]);
+  // 建筑标识
+  for(let k in BUILDINGS){let[px,py]=k.split(',').map(Number);let b=BUILDINGS[k];
+    ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+    ctx.fillText(b.emoji,px*TS+TS/2,py*TS+TS*.25);}
+  // 排序所有实体
+  let all=[];
+  for(let n of npcs)all.push({...n,isPlayer:false,isNPC:true});
+  for(let m of monsters)if(m.hp>0)all.push({...m,isPlayer:false,isMonster:true});
+  all.push({...player,isPlayer:true});
+  all.sort((a,b)=>a.y-b.y);
+  for(let e of all){
+    if(e.isPlayer)drawChar(e.x,e.y,player.alive?'#4499ff':'#666','🎮',true);
+    else if(e.isNPC)drawChar(e.x,e.y,e.color,e.name[0],false);
+    else if(e.isMonster)drawChar(e.x,e.y,e.color,e.emoji,false,e.size,e.hp/e.maxHp);
+  }
+  if(dialogBubble&&dialogBubble.timer>0){
+    let bx=dialogBubble.x*TS+TS/2,by=dialogBubble.y*TS-TS*.3;
+    ctx.fillStyle='rgba(0,0,0,.85)';let m=ctx.measureText(dialogBubble.msg);let w=m.width+16;
+    ctx.fillRect(bx-w/2,by-TS*.35,w,TS*.3);
+    ctx.fillStyle='#fff';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(dialogBubble.msg,bx,by-TS*.1);
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════
+//  UI更新
+// ═══════════════════════════════════════════════════
+function updatePlayerStats(){
+  let h='';
+  h+=`<div class="stat-row"><span>❤️ 生命</span><span class="hp">${player.hp}/${player.maxHp}</span></div>`;
+  h+=`<div class="stat-row"><span>⚡ 法力</span><span class="mp">${player.mp}/${player.maxMp}</span></div>`;
+  h+=`<div class="stat-row"><span>⚔️ 攻击</span><span class="atk">${player.atk}</span></div>`;
+  h+=`<div class="stat-row"><span>🛡️ 防御</span><span>${player.def}</span></div>`;
+  h+=`<div class="stat-row"><span>💰 金币</span><span class="gold">${player.gold}</span></div>`;
+  h+=`<div class="stat-row"><span>⭐ 经验</span><span class="exp">${player.exp}/${player.level*20}</span></div>`;
+  if(player.weapon>0)h+=`<div class="stat-row"><span>🗡️ 武器</span><span>${['铁剑','精钢长剑','秘银符文剑'][player.weapon-1]}</span></div>`;
+  if(player.hasFireball)h+=`<div class="stat-row"><span>🔥 法术</span><span>火球术</span></div>`;
+  document.getElementById('playerStats').innerHTML='<h3>🎮 冒险者 Lv.<span id="plv">'+player.level+'</span></h3>'+h;
+}
+
+function updateNPCList(){
+  let h='';
+  for(let n of npcs){
+    let si={idle:'💤',walking:'🚶',talking:'💬',casting:'✨'};
+    h+=`<div class="npc-row"><div class="npc-dot" style="background:${n.color}"></div><div class="npc-info"><span class="npc-name">${n.name}</span><span class="npc-detail"> ${si[n.state]||''} ${n.title}</span></div></div>`;
+  }
+  document.getElementById('npcList').innerHTML=h;
+}
+
+function updateEventLog(){
+  let l=document.getElementById('eventLog'),h='';
+  for(let i=Math.max(0,events.length-50);i<events.length;i++){let e=events[i];h+=`<div class="entry ${e.cat}">[${e.time}] ${e.msg}</div>`}
+  l.innerHTML=h;l.scrollTop=l.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════
+//  游戏循环
+// ═══════════════════════════════════════════════════
+let lastFrame=0,tickAccum=0,lastSpawnTurn=0,lastNPCUpdate=0;
+
+function loop(ts){
+  if(!gameStarted)return;
+  requestAnimationFrame(loop);
+  let dt=Math.min((ts-lastFrame)/1000,.1);lastFrame=ts;tickAccum+=dt;
+
+  // 回合计时
+  if(tickAccum>=1){tickAccum=0;turn++;
+    document.getElementById('turnDisp').textContent=`第${turn}回合`;
+    document.getElementById('posDisp').textContent=`(${player.x},${player.y})`;
+    // 怪物刷新
+    if(turn-lastSpawnTurn>=25){lastSpawnTurn=turn;if(Math.random()<.6)spawnMonster();}
+    // 清理死怪
+    monsters=monsters.filter(m=>m.hp>0||turn-(m._diedTurn||0)<3);
+  }
+
+  updateNPCs(dt*1000);
+  updateMonsters(ts);
+  handleInput(ts);
+  combatTick(ts);
+  if(dialogBubble)dialogBubble.timer-=dt;
+  // 缓慢回蓝
+  if(turn%5===0&&player.mp<player.maxMp)player.mp=Math.min(player.maxMp,player.mp+1);
+
+  render();
+  if(turn%2===0){updateNPCList();updatePlayerStats();}
+  // === Export game state to dashboard (every 2 turns) ===
+  if(turn%2===0){
+    try {
+      function tileZone(x,y){
+        if(x<0||x>=W||y<0||y>=H) return 'unknown';
+        var t = grid[y][x];
+        if(t==='F') return 'dark_forest';
+        if(t==='G') return 'elf_woods';
+        if(t==='M') return 'mine';
+        if(t==='H') return 'tavern';
+        if(t==='T') return 'tower';
+        if(t==='S') return 'shop';
+        if(t==='O') return 'ruins';
+        return 'village';
+      }
+      var ed = {
+        timestamp: new Date().toISOString(),
+        turn: turn, gameTime: Math.floor(gameTime),
+        player: {
+          name: 'Adventurer',
+          class: player.hasFireball ? 'Mage' : (player.weapon>=2 ? 'Warrior' : 'Hunter'),
+          level: player.level,
+          hp: player.hp, maxHp: player.maxHp,
+          mp: player.mp, maxMp: player.maxMp,
+          atk: player.atk, def: player.def,
+          gold: player.gold, exp: player.exp,
+          hasFireball: player.hasFireball,
+          weapon: ['None','Iron Sword','Steel Sword','Mithril Blade'][player.weapon]||'None',
+          zone: tileZone(player.x, player.y),
+          alive: player.alive, x: player.x, y: player.y,
+        },
+        npcs: npcs.map(function(n){ return {
+          name: n.name, title: n.title,
+          zone: tileZone(n.x, n.y), state: n.state, x: n.x, y: n.y,
+        };}),
+        monsters: monsters.filter(function(m){return m.hp>0;}).map(function(m){ return {
+          type: m.typeName, emoji: m.emoji,
+          hp: m.hp, maxHp: m.maxHp, atk: m.atk, def: m.def,
+          zone: tileZone(m.x, m.y), x: m.x, y: m.y,
+        };}),
+        recentEvents: events.slice(-5),
+      };
+      localStorage.setItem('arcane_village_state', JSON.stringify(ed));
+    } catch(e) {}
+  }
+
+}
+
+// ═══════════════════════════════════════════════════
+//  开始游戏
+// ═══════════════════════════════════════════════════
+function startGame(){
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('gameArea').style.display='flex';
+  canvas=document.getElementById('game');ctx=canvas.getContext('2d');
+  function resize(){
+    let w=document.getElementById('canvasWrap').clientWidth,h=window.innerHeight-16;
+    let s=Math.min(w-8,h,W*TS);canvas.width=s;canvas.height=s;
+  }
+  resize();window.addEventListener('resize',resize);
+  gameStarted=true;lastFrame=performance.now();turn=1;lastSpawnTurn=1;
+  updatePlayerStats();updateNPCList();
+  addEvent('system','🏰 欢迎来到奥术村庄！你是新来的冒险者。');
+  addEvent('system','💡 去酒馆恢复体力 | 铁匠铺买武器 | 商铺买药 | 高塔学法术');
+  addEvent('system','👹 森林里有怪物出没，小心！击败它们获得金币和经验。');
+  spawnMonster();spawnMonster(); // 初始2只怪物
+  requestAnimationFrame(loop);
+}
+
+// ── 键盘 ──────────────────────────────────────────────
+window.addEventListener('keydown',e=>{
+  if(!gameStarted)return;
+  keys[e.code]=true;
+  if(e.code==='Space'){e.preventDefault();addEvent('system',`📍 位置(${player.x},${player.y}) 第${turn}回合 金币:${player.gold}`);}
+  if(e.code==='KeyE'){
+    e.preventDefault();
+    // NPC对话
+    for(let n of npcs){if(mdist(player,n)<=1){let line=n.lines[Math.floor(Math.random()*n.lines.length)];addEvent('talk',`[你]和${n.name}聊天——「${line}」`);dialogBubble={x:n.x,y:n.y,msg:line,timer:2.5};keys['KeyE']=false;return;}}
+    // 建筑交互
+    let bk=player.x+','+player.y;
+    if(BUILDINGS[bk]){BUILDINGS[bk].act(player);updatePlayerStats();keys['KeyE']=false;return;}
+    addEvent('system','周围没有可交互的对象。');
+  }
+  if(e.code==='KeyF'&&player.hasFireball){
+    e.preventDefault();
+    if(player.mp<15){addEvent('system','⚡ 魔力不足！需要15魔力。');return;}
+    // 找最近怪物
+    let target=null,minD=99;
+    for(let m of monsters){if(m.hp<=0)continue;let d=mdist(player,m);if(d<=4&&d<minD){minD=d;target=m;}}
+    if(target){
+      player.mp-=15;let dmg=20+Math.floor(Math.random()*10);
+      target.hp=Math.max(0,target.hp-dmg);
+      addEvent('cast',`🔥 你向${target.typeName}发射火球！造成${dmg}点伤害！`);
+      if(target.hp<=0){
+        addEvent('loot',`💀 ${target.typeName}被火球击败！获得${target.gold}金币 +${target.exp}经验`);
+        player.gold+=target.gold;player.exp+=target.exp;checkLevelUp();
+      }
+    }else{addEvent('system','没有目标在射程内（4格）。');}
+  }
+});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});
+</script>
+</body>
+</html>

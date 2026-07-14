@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+﻿import React, { useRef, useEffect, useState, useCallback } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 
@@ -21,80 +21,81 @@ const NPC_COLORS = {
 
 // Common styles
 const S = {
-  page: { background: '#f1f5f9', minHeight: '100vh', padding: '24px' },
-  container: { maxWidth: 1200, margin: '0 auto' },
-  row: { display: 'flex', gap: 24, marginBottom: 24 },
-  col2: { flex: 1, minWidth: 0 },
-  full: { marginBottom: 24 },
-  card: { background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
-  cardHead: { padding: '12px 20px', borderBottom: '1px solid #f3f4f6', background: '#f9fafb' },
-  cardHeadTitle: { fontSize: 13, fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  cardBody: { padding: 20 },
-  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 },
-  statCard: { background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
-  statIcon: { fontSize: 20 },
-  statLabel: { fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  statVal: { fontSize: 22, fontWeight: 700, marginTop: 2 },
-  statSub: { fontSize: 11, color: '#6b7280', marginTop: 2 },
-  hpBar: { background: '#f3f4f6', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb', marginBottom: 12 },
-  hpLabel: { display: 'flex', justifyContent: 'space-between', marginBottom: 8 },
-  hpLabelText: { fontSize: 13, fontWeight: 600, color: '#374151' },
-  hpVal: { fontSize: 13, fontWeight: 700 },
-  barBg: { width: '100%', height: 12, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 99, transition: 'width 0.3s' },
-  tinyGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
-  tinyCard: { background: '#f9fafb', borderRadius: 12, padding: 12, border: '1px solid #e5e7eb', textAlign: 'center' },
-  tinyIcon: { fontSize: 24, marginBottom: 2 },
-  tinyVal: { fontSize: 20, fontWeight: 700 },
-  tinyLabel: { fontSize: 11, color: '#6b7280' },
-  sectionTitle: { fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: 8 },
-  npcGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 },
-  npcCard: { background: '#f9fafb', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' },
-  npcRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 },
-  npcAvatar: { width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 700 },
-  npcName: { fontSize: 13, fontWeight: 700, color: '#111827' },
-  npcTitle: { fontSize: 11, color: '#6b7280' },
-  npcState: { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#374151', background: '#fff', borderRadius: 8, padding: '4px 10px', border: '1px solid #e5e7eb' },
-  npcZone: { fontSize: 11, color: '#6b7280', marginTop: 8 },
-  monsterGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },
-  monsterCard: { background: '#f9fafb', borderRadius: 12, padding: 16, border: '1px solid #e5e7eb' },
-  monsterHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  monsterEmoji: { fontSize: 28 },
-  monsterName: { fontSize: 13, fontWeight: 700, color: '#111827' },
-  monsterZone: { fontSize: 11, color: '#6b7280', background: '#fff', borderRadius: 99, padding: '2px 10px', border: '1px solid #e5e7eb' },
-  monsterHP: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
-  monsterHPLabel: { fontSize: 11, color: '#6b7280' },
-  monsterHPVal: { fontSize: 11, fontWeight: 700, color: '#dc2626' },
-  monsterStats: { display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 11, color: '#6b7280' },
-  eventItem: { display: 'flex', gap: 12, padding: '10px 16px', borderRadius: 8, marginBottom: 4 },
-  eventTime: { fontSize: 11, color: '#6b7280', fontFamily: 'monospace', whiteSpace: 'nowrap' },
-  eventText: { fontSize: 13 },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', borderRadius: 16, padding: '16px 24px', border: '1px solid #e5e7eb', marginBottom: 24, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
-  headerTitle: { fontSize: 22, fontWeight: 700, color: '#111827' },
-  headerSub: { fontSize: 13, color: '#6b7280', marginTop: 2 },
-  liveBadge: { display: 'flex', alignItems: 'center', gap: 8, background: '#f0fdf4', borderRadius: 8, padding: '8px 16px', border: '1px solid #bbf7d0' },
-  liveDot: { width: 10, height: 10, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px rgba(34,197,94,0.4)' },
-  liveText: { fontSize: 13, fontWeight: 600, color: '#166534' },
-  waitPage: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f1f5f9' },
-  waitCard: { background: '#fff', borderRadius: 16, padding: 32, border: '1px solid #e5e7eb', maxWidth: 420, textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
-  waitTitle: { fontSize: 22, fontWeight: 700, color: '#111827', marginBottom: 8 },
-  waitSub: { fontSize: 14, color: '#6b7280', marginBottom: 20 },
-  waitDot: { width: 12, height: 12, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', marginRight: 8, animation: 'pulse 2s infinite' },
-  waitText: { fontSize: 16, fontWeight: 700, color: '#d97706' },
-  btn: { display: 'inline-block', width: '100%', padding: '14px 0', background: '#4f46e5', color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', textAlign: 'center', marginTop: 16 },
+  page: 'bg-slate-100 min-h-screen p-6',
+  container: 'max-w-5xl mx-auto',
+  row: 'flex gap-6 mb-6',
+  col2: 'flex-1 min-w-0',
+  full: 'mb-4',
+  card: 'bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm',
+  cardHead: 'px-5 py-3 border-b border-gray-100 bg-gray-50',
+  cardHeadTitle: 'text-xs font-bold text-slate-800 uppercase tracking-wider',
+  cardBody: 'p-5',
+  statGrid: 'grid grid-cols-4 gap-3 mb-4',
+  statCard: 'bg-white rounded-xl p-4 border border-gray-200 text-center shadow-xs',
+  statIcon: 'text-xl',
+  statLabel: 'text-xs font-semibold text-gray-500 uppercase tracking-wider',
+  statVal: 'text-2xl font-bold mt-0.5',
+  statSub: 'text-xs text-gray-500 mt-0.5',
+  hpBar: 'bg-gray-100 rounded-xl p-4 border border-gray-200 mb-3',
+  hpLabel: 'flex justify-between mb-2',
+  hpLabelText: 'text-sm font-semibold text-gray-700',
+  hpVal: 'text-sm font-bold',
+  barBg: 'w-full h-3 bg-gray-200 rounded-full overflow-hidden',
+  barFill: 'h-full rounded-full transition-all duration-300',
+  tinyGrid: 'grid grid-cols-2 gap-3',
+  tinyCard: 'bg-gray-50 rounded-xl p-3 border border-gray-200 text-center',
+  tinyIcon: 'text-2xl mb-0.5',
+  tinyVal: 'text-xl font-bold',
+  tinyLabel: 'text-xs text-gray-500',
+  sectionTitle: 'text-xs font-semibold text-gray-500 uppercase mb-2',
+  npcGrid: 'grid grid-cols-5 gap-3',
+  npcCard: 'bg-gray-50 rounded-xl p-4 border border-gray-200',
+  npcRow: 'flex items-center gap-3 mb-3',
+  npcAvatar: 'w-11 h-11 rounded-full flex items-center justify-center text-white text-lg font-bold',
+  npcName: 'text-sm font-bold text-gray-900',
+  npcTitle: 'text-xs text-gray-500',
+  npcState: 'inline-flex items-center gap-1 text-xs font-medium text-gray-700 bg-white rounded-lg px-2.5 py-1 border border-gray-200',
+  npcZone: 'text-xs text-gray-500 mt-2',
+  monsterGrid: 'grid grid-cols-4 gap-3',
+  monsterCard: 'bg-gray-50 rounded-xl p-4 border border-gray-200',
+  monsterHead: 'flex justify-between items-center mb-3',
+  monsterEmoji: 'text-3xl',
+  monsterName: 'text-sm font-bold text-gray-900',
+  monsterZone: 'text-xs text-gray-500 bg-white rounded-full px-2 py-0.5 border border-gray-200',
+  monsterHP: 'flex justify-between mb-1.5',
+  monsterHPLabel: 'text-xs text-gray-500',
+  monsterHPVal: 'text-xs font-bold text-red-600',
+  monsterStats: 'flex justify-between mt-3 text-xs text-gray-500',
+  eventItem: 'flex gap-3 px-4 py-2.5 rounded-lg mb-1',
+  eventTime: 'text-xs text-gray-500 font-mono whitespace-nowrap',
+  eventText: 'text-sm',
+  header: 'flex justify-between items-center bg-white rounded-2xl px-6 py-4 border border-gray-200 mb-6 shadow-sm',
+  headerTitle: 'text-xl font-bold text-gray-900',
+  headerSub: 'text-sm text-gray-500 mt-0.5',
+  liveBadge: 'flex items-center gap-2 bg-green-50 rounded-lg px-4 py-2 border border-green-200',
+  liveDot: 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm',
+  liveText: 'text-sm font-semibold text-green-800',
+  waitPage: 'flex items-center justify-center min-h-screen bg-slate-100',
+  waitCard: 'bg-white rounded-2xl p-8 border border-gray-200 max-w-sm text-center shadow-lg',
+  waitTitle: 'text-xl font-bold text-gray-900 mb-2',
+  waitSub: 'text-sm text-gray-500 mb-5',
+  waitDot: 'w-3 h-3 rounded-full bg-amber-500 inline-block mr-2',
+  waitText: 'text-base font-bold text-amber-600',
+  btn: 'inline-block w-full py-3.5 bg-indigo-600 text-white rounded-xl text-base font-bold no-underline text-center',
 };
 
 function HPBar({ hp, maxHp, color }) {
   const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
   const c = color || (pct > 50 ? '#16a34a' : pct > 25 ? '#d97706' : '#dc2626');
-  return React.createElement('div', { style: S.barBg },
-    React.createElement('div', { style: { ...S.barFill, width: pct + '%', background: c } })
+  return React.createElement('div', { className: S.barBg},
+    React.createElement('div', { className: S.barFill, style: { width: pct + '%', background: c } })
   );
 }
 
 function App() {
   const [gameState, setGameState] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const timerRef = useRef(null);
   const lastTurnRef = useRef(0);
 
@@ -103,11 +104,13 @@ function App() {
       const raw = localStorage.getItem('arcane_village_state');
       if (!raw) return;
       const data = JSON.parse(raw);
-      if (data.turn !== lastTurnRef.current) {
-        lastTurnRef.current = data.turn;
-        setGameState(data);
-        setConnected(true);
-      }
+      if (!data.timestamp) return;
+      const age = Date.now() - new Date(data.timestamp).getTime();
+      if (age > 6000 || age < 0) return;
+      lastTurnRef.current = data.turn;
+      setGameState(data);
+      setConnected(true);
+      setShowDashboard(true);
     } catch (e) {}
   }, []);
 
@@ -117,23 +120,22 @@ function App() {
   }, [pollGameState]);
 
   if (!connected) {
-    return React.createElement('div', { style: S.waitPage },
-      React.createElement('div', { style: S.waitCard },
+    return React.createElement('div', { className: S.waitPage},
+      React.createElement('div', { className: S.waitCard},
         React.createElement('div', { style: { fontSize: 64, marginBottom: 16 } }, '\ud83c\udfae'),
-        React.createElement('h1', { style: S.waitTitle }, 'Game Data Analyzer'),
-        React.createElement('p', { style: S.waitSub }, 'Arcane Village \xb7 Real-time Dashboard'),
+        React.createElement('h1', { className: S.waitTitle}, 'Game Data Analyzer'),
+        React.createElement('p', { className: S.waitSub}, 'Arcane Village \xb7 Real-time Dashboard'),
         React.createElement('div', { style: { marginBottom: 16 } },
-          React.createElement('span', { style: S.waitDot }),
-          React.createElement('span', { style: S.waitText }, 'Waiting for game data...')
+          React.createElement('span', { className: S.waitDot}),
+          React.createElement('span', { className: S.waitText}, 'Waiting for game data...')
         ),
         React.createElement('p', { style: { fontSize: 13, color: '#6b7280', lineHeight: 1.6 } },
-          'Open Arcane Village in a new tab and start playing.', React.createElement('br'),
-          'This dashboard will sync automatically.'
+          'Open the game in the new tab and start playing.', React.createElement('br'), 'Return here after a few seconds - the dashboard loads automatically.'
         ),
         React.createElement('a', {
-          href: 'https://yygssh.github.io/arcane-village/',
+          href: 'game.html',
           target: '_blank', rel: 'noopener noreferrer',
-          style: S.btn,
+          className: S.btn,
         }, '\ud83c\udff0 Open Arcane Village')
       )
     );
@@ -160,58 +162,58 @@ function App() {
     ...monsters.map(m => ({ name: m.type || '?', hp: m.hp || 0, atk: m.atk || 0 })),
   ];
 
-  return React.createElement('div', { style: S.page },
-    React.createElement('div', { style: S.container },
+  return React.createElement('div', { className: S.page},
+    React.createElement('div', { className: S.container},
       // Header
-      React.createElement('div', { style: S.header },
+      React.createElement('div', { className: S.header},
         React.createElement('div', null,
-          React.createElement('h1', { style: S.headerTitle }, '\ud83c\udfae Game Data Analyzer'),
-          React.createElement('p', { style: S.headerSub }, 'Arcane Village \xb7 Turn ' + (gameState?.turn || 0) + ' \xb7 ' + Math.floor((gameState?.gameTime || 0) / 1000) + 's')
+          React.createElement('h1', { className: S.headerTitle}, '\ud83c\udfae Game Data Analyzer'),
+          React.createElement('p', { className: S.headerSub}, 'Arcane Village \xb7 Turn ' + (gameState?.turn || 0) + ' \xb7 ' + Math.floor((gameState?.gameTime || 0) / 1000) + 's')
         ),
-        React.createElement('div', { style: S.liveBadge },
-          React.createElement('span', { style: S.liveDot }),
-          React.createElement('span', { style: S.liveText }, 'Live')
+        React.createElement('div', { className: S.liveBadge},
+          React.createElement('span', { className: S.liveDot}),
+          React.createElement('span', { className: S.liveText}, 'Live')
         )
       ),
 
       // Row 1: Player + Overview (2 columns)
-      React.createElement('div', { style: S.row },
+      React.createElement('div', { className: S.row},
         // Player Status
-        React.createElement('div', { style: S.col2 },
-          React.createElement('div', { style: S.card },
-            React.createElement('div', { style: S.cardHead },
-              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83c\udfaf Player Status')
+        React.createElement('div', { className: S.col2},
+          React.createElement('div', { className: S.card},
+            React.createElement('div', { className: S.cardHead},
+              React.createElement('h2', { className: S.cardHeadTitle}, '\ud83c\udfaf Player Status')
             ),
-            React.createElement('div', { style: S.cardBody },
-              React.createElement('div', { style: S.statGrid },
+            React.createElement('div', { className: S.cardBody},
+              React.createElement('div', { className: S.statGrid},
                 ...[
                   { icon: '\u2b50', label: 'Level', val: 'Lv.' + p.level, sub: p.class || '-', color: '#d97706' },
                   { icon: '\ud83d\udcb0', label: 'Gold', val: p.gold || 0, sub: 'Exp ' + (p.exp || 0) + '/' + (p.level * 20), color: '#b45309' },
                   { icon: '\u2694\ufe0f', label: 'ATK', val: p.atk || 0, sub: 'DEF ' + (p.def || 0), color: '#ea580c' },
                   { icon: '\ud83d\udde1\ufe0f', label: 'Weapon', val: p.weapon || 'None', sub: p.hasFireball ? 'Fireball' : 'None', color: '#7c3aed' },
-                ].map((s, i) => React.createElement('div', { key: i, style: S.statCard },
-                  React.createElement('div', { style: S.statIcon }, s.icon),
-                  React.createElement('div', { style: S.statLabel }, s.label),
-                  React.createElement('div', { style: { ...S.statVal, color: s.color } }, s.val),
-                  React.createElement('div', { style: S.statSub }, s.sub)
+                ].map((s, i) => React.createElement('div', { key: i, className: S.statCard},
+                  React.createElement('div', { className: S.statIcon}, s.icon),
+                  React.createElement('div', { className: S.statLabel}, s.label),
+                  React.createElement('div', { className: S.statVal, style: { color: s.color } }, s.val),
+                  React.createElement('div', { className: S.statSub}, s.sub)
                 ))
               ),
               // HP bar
-              React.createElement('div', { style: S.hpBar },
-                React.createElement('div', { style: S.hpLabel },
-                  React.createElement('span', { style: S.hpLabelText }, '\u2764\ufe0f HP'),
-                  React.createElement('span', { style: { ...S.hpVal, color: '#dc2626' } }, p.hp + ' / ' + p.maxHp)
+              React.createElement('div', { className: S.hpBar},
+                React.createElement('div', { className: S.hpLabel},
+                  React.createElement('span', { className: S.hpLabelText}, '\u2764\ufe0f HP'),
+                  React.createElement('span', { className: S.hpVal, style: { color: '#dc2626' } }, p.hp + ' / ' + p.maxHp)
                 ),
                 React.createElement(HPBar, { hp: p.hp || 0, maxHp: p.maxHp || 1 })
               ),
               // MP bar
-              React.createElement('div', { style: { ...S.hpBar, marginBottom: 0 } },
-                React.createElement('div', { style: S.hpLabel },
-                  React.createElement('span', { style: S.hpLabelText }, '\ud83d\udc99 MP'),
-                  React.createElement('span', { style: { ...S.hpVal, color: '#2563eb' } }, p.mp + ' / ' + p.maxMp)
+              React.createElement('div', { className: S.hpBar, style: { marginBottom: 0 } },
+                React.createElement('div', { className: S.hpLabel},
+                  React.createElement('span', { className: S.hpLabelText}, '\ud83d\udc99 MP'),
+                  React.createElement('span', { className: S.hpVal, style: { color: '#2563eb' } }, p.mp + ' / ' + p.maxMp)
                 ),
-                React.createElement('div', { style: S.barBg },
-                  React.createElement('div', { style: { ...S.barFill, width: mpPct + '%', background: '#3b82f6' } })
+                React.createElement('div', { className: S.barBg},
+                  React.createElement('div', { className: S.barFill, style: { width: mpPct + '%', background: '#3b82f6' } })
                 )
               )
             )
@@ -219,25 +221,25 @@ function App() {
         ),
 
         // Battle Overview
-        React.createElement('div', { style: S.col2 },
-          React.createElement('div', { style: S.card },
-            React.createElement('div', { style: S.cardHead },
-              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udcca Battle Overview')
+        React.createElement('div', { className: S.col2},
+          React.createElement('div', { className: S.card},
+            React.createElement('div', { className: S.cardHead},
+              React.createElement('h2', { className: S.cardHeadTitle}, '\ud83d\udcca Battle Overview')
             ),
-            React.createElement('div', { style: S.cardBody },
-              React.createElement('div', { style: S.tinyGrid },
+            React.createElement('div', { className: S.cardBody},
+              React.createElement('div', { className: S.tinyGrid},
                 ...[
                   { icon: '\ud83d\udc64', label: 'Total', val: totalEntities, color: '#1e293b' },
                   { icon: '\u2705', label: 'Alive', val: aliveCount, color: '#16a34a' },
                   { icon: '\ud83d\udc79', label: 'Monsters', val: monsters.length, color: '#dc2626' },
                   { icon: '\ud83d\udc65', label: 'NPCs', val: npcs.length, color: '#7c3aed' },
-                ].map((s, i) => React.createElement('div', { key: i, style: S.tinyCard },
-                  React.createElement('div', { style: S.tinyIcon }, s.icon),
-                  React.createElement('div', { style: { ...S.tinyVal, color: s.color } }, s.val),
-                  React.createElement('div', { style: S.tinyLabel }, s.label)
+                ].map((s, i) => React.createElement('div', { key: i, className: S.tinyCard},
+                  React.createElement('div', { className: S.tinyIcon}, s.icon),
+                  React.createElement('div', { className: S.tinyVal, style: { color: s.color } }, s.val),
+                  React.createElement('div', { className: S.tinyLabel}, s.label)
                 ))
               ),
-              React.createElement('div', { style: { ...S.sectionTitle, marginTop: 16 } }, 'Entity Distribution'),
+              React.createElement('div', { className: S.sectionTitle, style: { marginTop: 16 } }, 'Entity Distribution'),
               React.createElement(ResponsiveContainer, { width: '100%', height: 140 },
                 React.createElement(PieChart, null,
                   React.createElement(Pie, { data: typeDist, dataKey: 'value', nameKey: 'name', cx: '50%', cy: '50%', outerRadius: 50, label: ({ name, value }) => name + ' ' + value },
@@ -252,13 +254,13 @@ function App() {
       ),
 
       // Row 2: Zone + Combat (2 columns)
-      React.createElement('div', { style: S.row },
-        React.createElement('div', { style: S.col2 },
-          React.createElement('div', { style: S.card },
-            React.createElement('div', { style: S.cardHead },
-              React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udccd Zone Distribution')
+      React.createElement('div', { className: S.row},
+        React.createElement('div', { className: S.col2},
+          React.createElement('div', { className: S.card},
+            React.createElement('div', { className: S.cardHead},
+              React.createElement('h2', { className: S.cardHeadTitle}, '\ud83d\udccd Zone Distribution')
             ),
-            React.createElement('div', { style: S.cardBody },
+            React.createElement('div', { className: S.cardBody},
               React.createElement(ResponsiveContainer, { width: '100%', height: 280 },
                 React.createElement(BarChart, { data: zoneEntries, layout: 'vertical', margin: { left: 10, right: 20 } },
                   React.createElement(CartesianGrid, { strokeDasharray: '3 3', stroke: '#e5e7eb' }),
@@ -271,12 +273,12 @@ function App() {
             )
           )
         ),
-        React.createElement('div', { style: S.col2 },
-          React.createElement('div', { style: S.card },
-            React.createElement('div', { style: S.cardHead },
-              React.createElement('h2', { style: S.cardHeadTitle }, '\u2694\ufe0f Combat Power')
+        React.createElement('div', { className: S.col2},
+          React.createElement('div', { className: S.card},
+            React.createElement('div', { className: S.cardHead},
+              React.createElement('h2', { className: S.cardHeadTitle}, '\u2694\ufe0f Combat Power')
             ),
-            React.createElement('div', { style: S.cardBody },
+            React.createElement('div', { className: S.cardBody},
               combatRows.length > 1
                 ? React.createElement(ResponsiveContainer, { width: '100%', height: 280 },
                     React.createElement(BarChart, { data: combatRows, margin: { left: 10, right: 20 } },
@@ -295,27 +297,27 @@ function App() {
       ),
 
       // Row 3: NPCs (full width)
-      React.createElement('div', { style: S.full },
-        React.createElement('div', { style: S.card },
-          React.createElement('div', { style: S.cardHead },
-            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udc65 NPC Status (' + npcs.length + ')')
+      React.createElement('div', { className: S.full},
+        React.createElement('div', { className: S.card},
+          React.createElement('div', { className: S.cardHead},
+            React.createElement('h2', { className: S.cardHeadTitle}, '\ud83d\udc65 NPC Status (' + npcs.length + ')')
           ),
-          React.createElement('div', { style: S.cardBody },
-            React.createElement('div', { style: S.npcGrid },
+          React.createElement('div', { className: S.cardBody},
+            React.createElement('div', { className: S.npcGrid},
               npcs.map((n, i) => {
                 const st = n.state || 'idle';
                 const si = { walking: '\ud83d\udeb6 Moving', talking: '\ud83d\udcac Talking', casting: '\u2728 Casting', idle: '\ud83d\udca4 Idle' };
                 const nc = NPC_COLORS[n.name] || '#6366f1';
-                return React.createElement('div', { key: i, style: S.npcCard },
-                  React.createElement('div', { style: S.npcRow },
-                    React.createElement('div', { style: { ...S.npcAvatar, background: nc } }, n.name[0]),
+                return React.createElement('div', { key: i, className: S.npcCard},
+                  React.createElement('div', { className: S.npcRow},
+                    React.createElement('div', { className: S.npcAvatar, style: { background: nc } }, n.name[0]),
                     React.createElement('div', null,
-                      React.createElement('div', { style: S.npcName }, n.name),
-                      React.createElement('div', { style: S.npcTitle }, n.title)
+                      React.createElement('div', { className: S.npcName}, n.name),
+                      React.createElement('div', { className: S.npcTitle}, n.title)
                     )
                   ),
-                  React.createElement('div', { style: S.npcState }, si[st] || st),
-                  React.createElement('div', { style: S.npcZone }, '\ud83d\udccd ' + (ZONE_CN[n.zone] || n.zone))
+                  React.createElement('div', { className: S.npcState}, si[st] || st),
+                  React.createElement('div', { className: S.npcZone}, '\ud83d\udccd ' + (ZONE_CN[n.zone] || n.zone))
                 );
               })
             )
@@ -324,29 +326,29 @@ function App() {
       ),
 
       // Row 4: Monsters
-      React.createElement('div', { style: S.full },
-        React.createElement('div', { style: S.card },
-          React.createElement('div', { style: S.cardHead },
-            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udc79 Active Monsters (' + monsters.length + ')')
+      React.createElement('div', { className: S.full},
+        React.createElement('div', { className: S.card},
+          React.createElement('div', { className: S.cardHead},
+            React.createElement('h2', { className: S.cardHeadTitle}, '\ud83d\udc79 Active Monsters (' + monsters.length + ')')
           ),
-          React.createElement('div', { style: S.cardBody },
+          React.createElement('div', { className: S.cardBody},
             monsters.length === 0
               ? React.createElement('p', { style: { color: '#9ca3af', textAlign: 'center', padding: 16 } }, 'No monsters')
-              : React.createElement('div', { style: S.monsterGrid },
-                  monsters.map((m, i) => React.createElement('div', { key: i, style: S.monsterCard },
-                    React.createElement('div', { style: S.monsterHead },
+              : React.createElement('div', { className: S.monsterGrid},
+                  monsters.map((m, i) => React.createElement('div', { key: i, className: S.monsterCard},
+                    React.createElement('div', { className: S.monsterHead},
                       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-                        React.createElement('span', { style: S.monsterEmoji }, m.emoji),
-                        React.createElement('span', { style: S.monsterName }, m.type)
+                        React.createElement('span', { className: S.monsterEmoji}, m.emoji),
+                        React.createElement('span', { className: S.monsterName}, m.type)
                       ),
-                      React.createElement('span', { style: S.monsterZone }, ZONE_CN[m.zone] || m.zone)
+                      React.createElement('span', { className: S.monsterZone}, ZONE_CN[m.zone] || m.zone)
                     ),
-                    React.createElement('div', { style: S.monsterHP },
-                      React.createElement('span', { style: S.monsterHPLabel }, 'HP'),
-                      React.createElement('span', { style: S.monsterHPVal }, m.hp + ' / ' + m.maxHp)
+                    React.createElement('div', { className: S.monsterHP},
+                      React.createElement('span', { className: S.monsterHPLabel}, 'HP'),
+                      React.createElement('span', { className: S.monsterHPVal}, m.hp + ' / ' + m.maxHp)
                     ),
                     React.createElement(HPBar, { hp: m.hp || 0, maxHp: m.maxHp || 1 }),
-                    React.createElement('div', { style: S.monsterStats },
+                    React.createElement('div', { className: S.monsterStats},
                       React.createElement('span', null, 'ATK ' + m.atk),
                       React.createElement('span', null, 'DEF ' + m.def)
                     )
@@ -357,12 +359,12 @@ function App() {
       ),
 
       // Row 5: Events
-      React.createElement('div', { style: S.full },
-        React.createElement('div', { style: S.card },
-          React.createElement('div', { style: S.cardHead },
-            React.createElement('h2', { style: S.cardHeadTitle }, '\ud83d\udcdc Event Log')
+      React.createElement('div', { className: S.full},
+        React.createElement('div', { className: S.card},
+          React.createElement('div', { className: S.cardHead},
+            React.createElement('h2', { className: S.cardHeadTitle}, '\ud83d\udcdc Event Log')
           ),
-          React.createElement('div', { style: { ...S.cardBody, maxHeight: 280, overflowY: 'auto' } },
+          React.createElement('div', { className: S.cardBody, style: { maxHeight: 280, overflowY: 'auto' } },
             events.length === 0 && React.createElement('p', { style: { color: '#9ca3af', fontSize: 13, padding: 8 } }, 'Waiting for events...'),
             events.map((e, i) => {
               const catColors = {
@@ -375,10 +377,10 @@ function App() {
               const cc = catColors[e.cat] || { border: '#d1d5db', bg: '#fff', text: '#374151' };
               return React.createElement('div', {
                 key: i,
-                style: { ...S.eventItem, borderLeft: '3px solid ' + cc.border, background: cc.bg }
+                className: S.eventItem, style: { borderLeft: '3px solid ' + cc.border, background: cc.bg }
               },
-                React.createElement('span', { style: S.eventTime }, '[' + e.time + ']'),
-                React.createElement('span', { style: { ...S.eventText, color: cc.text, fontStyle: e.cat === 'system' ? 'italic' : 'normal' } }, e.msg)
+                React.createElement('span', { className: S.eventTime}, '[' + e.time + ']'),
+                React.createElement('span', { className: S.eventText, style: { color: cc.text, fontStyle: e.cat === 'system' ? 'italic' : 'normal' } }, e.msg)
               );
             })
           )

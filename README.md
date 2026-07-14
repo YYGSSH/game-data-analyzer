@@ -1,4 +1,4 @@
-# JSON Data Visualizer
+﻿# JSON Data Visualizer
 
 > ⚠️ **Work in Progress** – This dashboard is actively being developed. The feature set is evolving constantly, and the current implementation serves as a foundation for a **microservice-oriented data visualization tool**.
 
